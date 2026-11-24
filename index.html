@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Daily Writing Mood Lamp</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: transparent; font: 13px system-ui, sans-serif; color: #fff8f1; }
+  .lamp {
+    position: relative; isolation: isolate; overflow: hidden;
+    width: min(100vw, 100dvh); aspect-ratio: 1; margin-inline: auto;
+    background: #392448;
+    --base: #6c345b; --plum: #592d72; --rose: #df676f;
+    --amber: #ffae70; --light: #ffd2aa; --haze: 0;
+  }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  .surface {
+    position: absolute; inset: 0; width: 100%; border: 0; overflow: hidden;
+    background: var(--base); transition: background 5s; padding: 0;
+  }
+  .surface::before, .surface::after {
+    content: ""; position: absolute; inset: -37%; pointer-events: none;
+    transition: opacity 5s; filter: blur(13px);
+  }
+  .surface::before {
+    background:
+      radial-gradient(ellipse 29% 22% at 57% 59%, var(--light), transparent 95%),
+      radial-gradient(ellipse 41% 24% at 51% 57%, var(--amber), transparent 92%),
+      radial-gradient(ellipse 34% 38% at 51% 52%, var(--rose), transparent 93%),
+      radial-gradient(ellipse 42% 35% at 36% 32%, var(--plum), transparent 95%);
+    animation: drift 32s ease-in-out infinite alternate;
+    opacity: calc(1 - var(--haze) * .24);
+  }
+  .surface::after {
+    background:
+      radial-gradient(ellipse 38% 16% at 56% 44%, var(--rose), transparent 90%),
+      radial-gradient(ellipse 34% 23% at 37% 63%, var(--plum), transparent 93%),
+      radial-gradient(ellipse 25% 15% at 65% 65%, var(--light), transparent 96%);
+    opacity: calc(.70 - var(--haze) * .3);
+    animation: drift 43s ease-in-out infinite alternate-reverse;
+    mix-blend-mode: soft-light;
+  }
+  .surface[aria-pressed="true"]::before, .surface[aria-pressed="true"]::after {
+    animation-play-state: paused;
+  }
+  @keyframes drift {
+    0% { transform: translate(-5%, 6%) rotate(-24deg) scale(1.07); }
+    50% { transform: translate(7%, -5%) rotate(5deg) scale(1.19, .92); }
+    100% { transform: translate(-2%, -2%) rotate(30deg) scale(1.04, 1.12); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .surface::before, .surface::after { animation: none; }
+    .surface { transition: none; }
+  }
+  .surface:focus-visible { outline: 2px solid white; outline-offset: -4px; }
+  .edge {
+    position: absolute; inset: auto 0 0; display: flex; justify-content: space-between;
+    padding: 16px 12px 10px; pointer-events: none;
+    background: linear-gradient(transparent, rgb(33 17 38 / 48%));
+    font-size: clamp(9px, 4vmin, 12px); font-variant-numeric: tabular-nums;
+  }
+  .solar { display: grid; gap: 2px; }
+  .solar:last-child { text-align: right; }
+  .solar small { font-size: .82em; }
+  .settings {
+    position: absolute; top: 7px; right: 7px; border: 0; border-radius: 8px;
+    background: rgb(33 17 38 / 48%); padding: 5px 8px;
+  }
+  .panel {
+    position: absolute; inset: 38px 8px 42px; overflow: auto; padding: 10px;
+    border-radius: 10px; background: #332337;
+  }
+  .panel input { width: 100%; margin: 5px 0; padding: 5px; font: inherit; }
+  .panel button { background: transparent; border: 1px solid #a983aa; border-radius: 5px; padding: 4px 6px; }
+  .results { display: grid; gap: 4px; margin-top: 6px; }
+  .results button { text-align: left; }
+  .status { margin: 5px 0; font-size: 11px; }
+  .credit { color: inherit; font-size: 10px; }
+</style>
+<main class="lamp">
+  <button class="surface" type="button" aria-label="Pause color motion" aria-pressed="false"></button>
+  <div class="edge">
+    <span class="solar"><small>Sunrise</small><span id="sunrise">—</span></span>
+    <span class="solar"><small>Sunset</small><span id="sunset">—</span></span>
+  </div>
+  <button class="settings" type="button" aria-controls="location-panel" aria-expanded="false">Set city</button>
+  <section class="panel" id="location-panel" hidden>
+    <form>
+      <label for="city">Weather location</label>
+      <input id="city" type="search" placeholder="Search city" minlength="2" required>
+      <button type="submit">Search</button>
+    </form>
+    <div class="results"></div>
+    <p class="status" role="status"></p>
+    <a class="credit" href="https://open-meteo.com/" target="_blank" rel="noopener">Weather data by Open-Meteo</a>
+  </section>
+</main>
+<script>
+  const lamp = document.querySelector('.lamp');
+  const surface = document.querySelector('.surface');
+  const settings = document.querySelector('.settings');
+  const panel = document.querySelector('.panel');
+  const cityInput = document.querySelector('#city');
+  const status = document.querySelector('.status');
+  const results = document.querySelector('.results');
+  const sunriseLabel = document.querySelector('#sunrise');
+  const sunsetLabel = document.querySelector('#sunset');
+  const storageKey = 'daily-writing-mood-lamp-city';
+  const palettes = {
+    dawn: ['#694668', '#75558c', '#db7d8e', '#f5aa82', '#ffe0b7'],
+    day: ['#845269', '#93648e', '#ed8891', '#ffc48e', '#ffe2ae'],
+    dusk: ['#6c345b', '#592d72', '#df676f', '#ffae70', '#ffd2aa'],
+    night: ['#231b3c', '#3e2c64', '#9e557b', '#ca756a', '#f2aa87'],
+  };
+  const colorProperties = ['--base', '--plum', '--rose', '--amber', '--light'];
+  let locationChoice;
+  let forecast;
+  let weatherRequest = 0;
+  let citySearch = 0;
+
+  try { locationChoice = JSON.parse(localStorage.getItem(storageKey)); } catch {}
+
+  const params = new URLSearchParams(window.location.search);
+  if (params.has('lat') && params.has('lon')) {
+    const latitude = Number(params.get('lat'));
+    const longitude = Number(params.get('lon'));
+    if (params.get('lat').trim() && params.get('lon').trim() &&
+        Math.abs(latitude) <= 90 && Math.abs(longitude) <= 180) {
+      locationChoice = { latitude, longitude, name: params.get('city') || 'Selected location' };
+    }
+  }
+
+  function render() {
+    let phase = 'dusk';
+    let cloudCover = 0;
+    sunriseLabel.textContent = '—';
+    sunsetLabel.textContent = '—';
+    if (forecast) {
+      const now = Date.now() / 1000;
+      const dateFormatter = new Intl.DateTimeFormat('en-CA', {
+        timeZone: forecast.timezone, year: 'numeric', month: '2-digit', day: '2-digit',
+      });
+      const today = dateFormatter.format(Date.now());
+      const index = forecast.daily.time.findIndex(day => dateFormatter.format(day * 1000) === today);
+      const sunrise = forecast.daily.sunrise[index];
+      const sunset = forecast.daily.sunset[index];
+      const clock = new Intl.DateTimeFormat(undefined, {
+        timeZone: forecast.timezone, hour: 'numeric', minute: '2-digit',
+      });
+      sunriseLabel.textContent = Number.isFinite(sunrise) ? clock.format(sunrise * 1000) : '—';
+      sunsetLabel.textContent = Number.isFinite(sunset) ? clock.format(sunset * 1000) : '—';
+      phase = forecast.current.is_day ? 'day' : 'night';
+      if (Number.isFinite(sunrise) && Math.abs(now - sunrise) < 3600) phase = 'dawn';
+      if (Number.isFinite(sunset) && Math.abs(now - sunset) < 4500) phase = 'dusk';
+      cloudCover = (forecast.current.cloud_cover ?? 0) / 100;
+    }
+    if (surface.getAttribute('aria-pressed') === 'true') return;
+    palettes[phase].forEach((color, index) => lamp.style.setProperty(colorProperties[index], color));
+    lamp.style.setProperty('--haze', cloudCover);
+  }
+
+  async function getJson(url) {
+    const response = await fetch(url, { signal: AbortSignal.timeout(10000) });
+    if (!response.ok) throw new Error('Request failed');
+    return response.json();
+  }
+
+  async function loadWeather() {
+    if (!locationChoice) return;
+    const request = ++weatherRequest;
+    const { latitude, longitude, name } = locationChoice;
+    const query = new URLSearchParams({
+      latitude, longitude, current: 'cloud_cover,is_day', daily: 'sunrise,sunset',
+      timezone: 'auto', forecast_days: 2, timeformat: 'unixtime',
+    });
+    settings.textContent = 'City';
+    settings.setAttribute('aria-label', 'Change weather location');
+    status.textContent = 'Loading weather…';
+    try {
+      const data = await getJson('https://api.open-meteo.com/v1/forecast?' + query);
+      if (request !== weatherRequest) return;
+      forecast = data;
+      status.textContent = name;
+      render();
+    } catch {
+      if (request !== weatherRequest) return;
+      status.textContent = 'Weather unavailable. Choose a city to retry.';
+    }
+  }
+
+  function toggleSettings(open) {
+    settings.setAttribute('aria-expanded', String(open));
+    panel.hidden = !open;
+    if (open) cityInput.focus();
+    else settings.focus();
+  }
+
+  settings.addEventListener('click', () => toggleSettings(panel.hidden));
+  panel.addEventListener('keydown', event => {
+    if (event.key === 'Escape') toggleSettings(false);
+  });
+  surface.addEventListener('click', () => {
+    const paused = surface.getAttribute('aria-pressed') === 'true';
+    surface.setAttribute('aria-pressed', String(!paused));
+    surface.setAttribute('aria-label', paused ? 'Pause color motion' : 'Resume color motion');
+    if (paused) render();
+  });
+
+  panel.querySelector('form').addEventListener('submit', async event => {
+    event.preventDefault();
+    const request = ++citySearch;
+    results.replaceChildren();
+    status.textContent = 'Searching…';
+    const query = new URLSearchParams({ name: cityInput.value.trim(), count: 5, language: 'en' });
+    try {
+      const data = await getJson('https://geocoding-api.open-meteo.com/v1/search?' + query);
+      if (request !== citySearch) return;
+      status.textContent = data.results?.length ? '' : 'No matching cities.';
+      for (const city of data.results ?? []) {
+        const option = document.createElement('button');
+        option.type = 'button';
+        option.textContent = [...new Set([city.name, city.admin1, city.country].filter(Boolean))].join(', ');
+        option.addEventListener('click', () => {
+          locationChoice = { latitude: city.latitude, longitude: city.longitude, name: option.textContent };
+          try { localStorage.setItem(storageKey, JSON.stringify(locationChoice)); } catch {}
+          if (params.has('lat') || params.has('lon')) {
+            params.set('lat', city.latitude);
+            params.set('lon', city.longitude);
+            params.set('city', city.name);
+            history.replaceState(null, '', '?' + params);
+          }
+          forecast = null;
+          results.replaceChildren();
+          render();
+          loadWeather();
+          toggleSettings(false);
+        });
+        results.append(option);
+      }
+    } catch {
+      if (request === citySearch) status.textContent = 'City search unavailable. Try again.';
+    }
+  });
+
+  loadWeather();
+  setInterval(render, 60000);
+  setInterval(loadWeather, 30 * 60000);
+</script>
+</html>
