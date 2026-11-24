@@ -9,9 +9,9 @@
   .lamp {
     position: relative; isolation: isolate; overflow: hidden;
     width: min(100vw, 100dvh); aspect-ratio: 1; margin-inline: auto;
-    background: #392448;
-    --base: #6c345b; --plum: #592d72; --rose: #df676f;
-    --amber: #ffae70; --light: #ffd2aa; --haze: 0;
+    background: #cba9ee;
+    --base: #cba9ee; --plum: #bda4f6; --rose: #ff9fd4;
+    --amber: #ffc0e4; --light: #ffe5f4; --haze: 0;
   }
   button { font: inherit; color: inherit; cursor: pointer; }
   .surface {
@@ -56,7 +56,8 @@
   .edge {
     position: absolute; inset: auto 0 0; display: flex; justify-content: space-between;
     padding: 16px 12px 10px; pointer-events: none;
-    background: linear-gradient(transparent, rgb(33 17 38 / 48%));
+    color: #302043;
+    background: linear-gradient(transparent, rgb(255 243 253 / 34%));
     font-size: clamp(9px, 4vmin, 12px); font-variant-numeric: tabular-nums;
   }
   .solar { display: grid; gap: 2px; }
@@ -65,7 +66,7 @@
   .date {
     position: absolute; top: 10px; left: 12px; right: 72px;
     font-size: clamp(9px, 4vmin, 12px); text-wrap: balance;
-    text-shadow: 0 1px 5px #332337; pointer-events: none;
+    color: #302043; text-shadow: 0 1px 5px #fae8ff; pointer-events: none;
   }
   .settings {
     position: absolute; top: 7px; right: 7px; border: 0; border-radius: 8px;
@@ -114,10 +115,10 @@
   const dateLabel = document.querySelector('#date');
   const storageKey = 'daily-writing-mood-lamp-city';
   const palettes = {
-    dawn: ['#694668', '#75558c', '#db7d8e', '#f5aa82', '#ffe0b7'],
-    day: ['#845269', '#93648e', '#ed8891', '#ffc48e', '#ffe2ae'],
-    dusk: ['#6c345b', '#592d72', '#df676f', '#ffae70', '#ffd2aa'],
-    night: ['#231b3c', '#3e2c64', '#9e557b', '#ca756a', '#f2aa87'],
+    dawn: ['#dac4f5', '#c5b6f5', '#f6aedd', '#ffd1e9', '#fff0f5'],
+    day: ['#e1ccfa', '#cec2fa', '#ffb4de', '#ffcee9', '#fff2fa'],
+    dusk: ['#cba9ee', '#bda4f6', '#ff9fd4', '#ffc0e4', '#ffe5f4'],
+    night: ['#a48bc9', '#b5a1e2', '#e995cf', '#f3afd9', '#ffdaed'],
   };
   const colorProperties = ['--base', '--plum', '--rose', '--amber', '--light'];
   let locationChoice;
