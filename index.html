@@ -164,12 +164,34 @@
     const longitude = Number(params.get('lon'));
     if (params.get('lat').trim() && params.get('lon').trim() &&
         Math.abs(latitude) <= 90 && Math.abs(longitude) <= 180) {
-      locationChoice = { latitude, longitude, name: params.get('city') || 'Selected location' };
+      const timezone = locationChoice?.latitude === latitude && locationChoice?.longitude === longitude
+        ? locationChoice.timezone : undefined;
+      locationChoice = { latitude, longitude, name: params.get('city') || 'Selected location', timezone };
     }
   }
 
+  // NOAA solar equations evaluated at local noon for the selected calendar day.
+  function estimateSunTimes(localDay, { latitude, longitude }) {
+    const [year, month, day] = localDay.split('-').map(Number);
+    const midnight = Date.UTC(year, month - 1, day);
+    const yearStart = Date.UTC(year, 0, 1);
+    const fraction = 2 * Math.PI * (midnight - yearStart) / (Date.UTC(year + 1, 0, 1) - yearStart);
+    const equation = 229.18 * (0.000075 + 0.001868 * Math.cos(fraction) - 0.032077 * Math.sin(fraction)
+      - 0.014615 * Math.cos(2 * fraction) - 0.040849 * Math.sin(2 * fraction));
+    const declination = 0.006918 - 0.399912 * Math.cos(fraction) + 0.070257 * Math.sin(fraction)
+      - 0.006758 * Math.cos(2 * fraction) + 0.000907 * Math.sin(2 * fraction)
+      - 0.002697 * Math.cos(3 * fraction) + 0.00148 * Math.sin(3 * fraction);
+    const radians = Math.PI / 180;
+    const lat = latitude * radians;
+    const angle = Math.acos(Math.cos(90.833 * radians) / (Math.cos(lat) * Math.cos(declination))
+      - Math.tan(lat) * Math.tan(declination));
+    const noon = 720 - 4 * longitude - equation;
+    const halfDay = 4 * angle / radians;
+    return [(midnight / 1000) + (noon - halfDay) * 60, (midnight / 1000) + (noon + halfDay) * 60];
+  }
+
   function render() {
-    const timezone = forecast?.timezone;
+    const timezone = forecast?.timezone ?? locationChoice?.timezone;
     const today = new Date();
     dateLabel.textContent = new Intl.DateTimeFormat('en-US', {
       timeZone: timezone, weekday: 'long', month: 'long', day: 'numeric',
@@ -185,24 +207,29 @@
     let cloudCover = 0;
     sunriseLabel.textContent = '—';
     sunsetLabel.textContent = '—';
-    if (forecast) {
+    if (timezone) {
       const now = Date.now() / 1000;
-      const dateFormatter = new Intl.DateTimeFormat('en-CA', {
-        timeZone: forecast.timezone, year: 'numeric', month: '2-digit', day: '2-digit',
+      const dateFormatter = new Intl.DateTimeFormat('sv-SE', {
+        timeZone: timezone, year: 'numeric', month: '2-digit', day: '2-digit',
       });
       const localDay = dateFormatter.format(today);
-      const index = forecast.daily.time.findIndex(day => dateFormatter.format(day * 1000) === localDay);
-      const sunrise = forecast.daily.sunrise[index];
-      const sunset = forecast.daily.sunset[index];
+      const index = forecast?.daily.time.findIndex(day => dateFormatter.format(day * 1000) === localDay) ?? -1;
+      const [estimatedRise, estimatedSet] = index === -1 ? estimateSunTimes(localDay, locationChoice) : [];
+      const sunrise = forecast?.daily.sunrise[index] ?? estimatedRise;
+      const sunset = forecast?.daily.sunset[index] ?? estimatedSet;
       const clock = new Intl.DateTimeFormat(undefined, {
-        timeZone: forecast.timezone, hour: 'numeric', minute: '2-digit',
+        timeZone: timezone, hour: 'numeric', minute: '2-digit',
       });
       sunriseLabel.textContent = Number.isFinite(sunrise) ? clock.format(sunrise * 1000) : '—';
       sunsetLabel.textContent = Number.isFinite(sunset) ? clock.format(sunset * 1000) : '—';
-      phase = forecast.current.is_day ? 'day' : 'night';
+      if (Number.isFinite(sunrise) && Number.isFinite(sunset)) {
+        phase = now >= sunrise && now < sunset ? 'day' : 'night';
+      } else if (forecast) {
+        phase = forecast.current.is_day ? 'day' : 'night';
+      }
       if (Number.isFinite(sunrise) && Math.abs(now - sunrise) < 3600) phase = 'dawn';
       if (Number.isFinite(sunset) && Math.abs(now - sunset) < 4500) phase = 'dusk';
-      cloudCover = (forecast.current.cloud_cover ?? 0) / 100;
+      cloudCover = (forecast?.current.cloud_cover ?? 0) / 100;
     }
     if (surface.getAttribute('aria-pressed') === 'true') return;
     lamp.dataset.phase = phase;
@@ -232,11 +259,17 @@
       const data = await getJson('https://api.open-meteo.com/v1/forecast?' + query);
       if (request !== weatherRequest) return;
       forecast = data;
+      if (!locationChoice.timezone && data.timezone) {
+        locationChoice.timezone = data.timezone;
+        try { localStorage.setItem(storageKey, JSON.stringify(locationChoice)); } catch {}
+      }
       status.textContent = name;
       render();
     } catch {
       if (request !== weatherRequest) return;
-      status.textContent = 'Weather unavailable. Choose a city to retry.';
+      status.textContent = locationChoice.timezone
+        ? 'Live weather unavailable. Sun times are estimated.'
+        : 'Live weather unavailable. Select your city again to enable estimated sun times.';
     }
   }
 
@@ -273,7 +306,9 @@
         option.type = 'button';
         option.textContent = [...new Set([city.name, city.admin1, city.country].filter(Boolean))].join(', ');
         option.addEventListener('click', () => {
-          locationChoice = { latitude: city.latitude, longitude: city.longitude, name: city.name };
+          locationChoice = {
+            latitude: city.latitude, longitude: city.longitude, name: city.name, timezone: city.timezone,
+          };
           try { localStorage.setItem(storageKey, JSON.stringify(locationChoice)); } catch {}
           if (params.has('lat') || params.has('lon')) {
             params.set('lat', city.latitude);
