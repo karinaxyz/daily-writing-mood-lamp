@@ -41,6 +41,20 @@
     animation: drift 43s ease-in-out infinite alternate-reverse;
     mix-blend-mode: soft-light;
   }
+  .lamp[data-phase="dawn"] .surface, .lamp[data-phase="day"] .surface {
+    background: radial-gradient(ellipse at 87% 24%, var(--plum), transparent 65%), var(--base);
+  }
+  .lamp[data-phase="dawn"] .surface::before, .lamp[data-phase="day"] .surface::before {
+    background:
+      radial-gradient(ellipse 26% 15% at 43% 46%, var(--light), transparent 96%),
+      radial-gradient(ellipse 27% 34% at 40% 50%, var(--amber), transparent 96%),
+      radial-gradient(ellipse 37% 28% at 43% 53%, var(--rose), transparent 95%);
+  }
+  .lamp[data-phase="dawn"] .surface::after, .lamp[data-phase="day"] .surface::after {
+    background:
+      radial-gradient(ellipse 23% 34% at 64% 48%, var(--plum), transparent 92%),
+      radial-gradient(ellipse 32% 13% at 53% 65%, var(--rose), transparent 96%);
+  }
   .surface[aria-pressed="true"]::before, .surface[aria-pressed="true"]::after {
     animation-play-state: paused;
   }
@@ -123,8 +137,8 @@
   const dateLabel = document.querySelector('#date');
   const storageKey = 'daily-writing-mood-lamp-city';
   const palettes = {
-    dawn: ['#96bbda', '#b5c9dc', '#f4b8aa', '#f5a674', '#ffe5b7'],
-    day: ['#8fb9dd', '#b4cde1', '#f4c9b0', '#f5b17d', '#ffedc9'],
+    dawn: ['#638fbc', '#8d91ba', '#dc8b86', '#e28c57', '#f6bc84'],
+    day: ['#729bc4', '#9c9fc8', '#e89a8c', '#ed9b64', '#fac691'],
     dusk: ['#8d9dc6', '#b1a0c7', '#ec9d94', '#f48f57', '#ffd6a0'],
     night: ['#7c96bb', '#a49fbc', '#d89d9c', '#e3a07e', '#f7caa5'],
   };
@@ -183,6 +197,7 @@
       cloudCover = (forecast.current.cloud_cover ?? 0) / 100;
     }
     if (surface.getAttribute('aria-pressed') === 'true') return;
+    lamp.dataset.phase = phase;
     palettes[phase].forEach((color, index) => lamp.style.setProperty(colorProperties[index], color));
     lamp.style.setProperty('--haze', cloudCover);
   }
