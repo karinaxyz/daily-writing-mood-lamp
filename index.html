@@ -9,8 +9,7 @@
   body { margin: 0; background: transparent; font: 13px ui-monospace, "SFMono-Regular", Consolas, monospace; color: #fff8f1; }
   .lamp {
     position: relative; isolation: isolate; overflow: hidden;
-    width: min(100vw, 100dvh); aspect-ratio: 1; margin-inline: auto;
-    container-type: inline-size;
+    width: 100%; height: 100dvh;
     background: #8d9dc6;
     --base: #8d9dc6; --plum: #b1a0c7; --rose: #ec9d94;
     --amber: #f48f57; --light: #ffd6a0; --haze: 0;
@@ -71,13 +70,13 @@
   }
   .surface:focus-visible { outline: 2px solid white; outline-offset: -4px; }
   .edge, .date, .settings {
-    font-size: clamp(8px, 3.5cqi, 13px);
+    font-size: clamp(8px, 3.5vmin, 13px);
     letter-spacing: .08em;
     text-transform: uppercase;
   }
   .edge {
     position: absolute; inset: auto 0 0; display: flex; justify-content: space-between;
-    padding: 16px clamp(8px, 5cqi, 24px) clamp(8px, 4cqi, 18px);
+    padding: 16px clamp(8px, 5vmin, 24px) clamp(8px, 4vmin, 18px);
     pointer-events: none;
     font-variant-numeric: tabular-nums;
   }
@@ -85,9 +84,9 @@
   .solar:last-child { text-align: right; }
   .solar small { font-size: inherit; }
   .heading {
-    position: absolute; top: clamp(8px, 4cqi, 18px);
-    inset-inline: clamp(8px, 5cqi, 24px);
-    display: grid; justify-items: start; gap: clamp(2px, .8cqi, 4px);
+    position: absolute; top: clamp(8px, 4vmin, 18px);
+    inset-inline: clamp(8px, 5vmin, 24px);
+    display: grid; justify-items: start; gap: clamp(2px, .8vmin, 4px);
     pointer-events: none;
   }
   .date, .settings {
@@ -96,15 +95,15 @@
     letter-spacing: normal;
     text-transform: none;
   }
-  .date { font-size: clamp(10px, 4.45cqi, 16px); }
+  .date { font-size: clamp(10px, 4.45vmin, 16px); }
   .settings {
-    font-size: clamp(9px, 3.7cqi, 13px);
+    font-size: clamp(9px, 3.7vmin, 13px);
     max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     border: 0; background: transparent; padding: 2px 0;
     text-decoration: underline; text-underline-offset: 2px; pointer-events: auto;
   }
   .panel {
-    position: absolute; inset: clamp(44px, 18cqi, 67px) 8px clamp(40px, 15cqi, 60px);
+    position: absolute; inset: clamp(44px, 18vmin, 67px) 8px clamp(40px, 15vmin, 60px);
     overflow: auto; padding: 10px;
     border-radius: 10px; background: #332337;
   }
