@@ -81,21 +81,18 @@
   .solar { display: grid; gap: 2px; }
   .solar:last-child { text-align: right; }
   .solar small { font-size: inherit; }
-  .date {
-    position: absolute; top: 11px; left: 12px; max-width: calc(100% - 84px);
-    font-family: Helvetica, Arial, sans-serif;
-    font-weight: 700;
-    letter-spacing: -.007em;
-    text-transform: none;
-    text-wrap: balance;
+  .heading {
+    position: absolute; top: 10px; left: 12px; right: 12px;
+    display: grid; justify-items: start; gap: 2px;
     pointer-events: none;
   }
   .settings {
-    position: absolute; top: 7px; right: 7px; border: 0;
-    background: transparent; padding: 4px 5px;
+    max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    border: 0; background: transparent; padding: 2px 0;
+    text-decoration: underline; text-underline-offset: 2px; pointer-events: auto;
   }
   .panel {
-    position: absolute; inset: 38px 8px 42px; overflow: auto; padding: 10px;
+    position: absolute; inset: 48px 8px 42px; overflow: auto; padding: 10px;
     border-radius: 10px; background: #332337;
   }
   .panel input { width: 100%; margin: 5px 0; padding: 5px; font: inherit; }
@@ -107,12 +104,14 @@
 </style>
 <main class="lamp">
   <button class="surface" type="button" aria-label="Pause color motion" aria-pressed="false"></button>
-  <time class="date" id="date"></time>
+  <div class="heading">
+    <time class="date" id="date"></time>
+    <button class="settings" type="button" aria-controls="location-panel" aria-expanded="false">Set city</button>
+  </div>
   <div class="edge">
     <span class="solar"><small>Sunrise</small><span id="sunrise">—</span></span>
     <span class="solar"><small>Sunset</small><span id="sunset">—</span></span>
   </div>
-  <button class="settings" type="button" aria-controls="location-panel" aria-expanded="false">Set city</button>
   <section class="panel" id="location-panel" hidden>
     <form>
       <label for="city">Weather location</label>
@@ -216,8 +215,9 @@
       latitude, longitude, current: 'cloud_cover,is_day', daily: 'sunrise,sunset',
       timezone: 'auto', forecast_days: 2, timeformat: 'unixtime',
     });
-    settings.textContent = 'City';
-    settings.setAttribute('aria-label', 'Change weather location');
+    const cityName = name.split(',')[0].trim();
+    settings.textContent = cityName;
+    settings.setAttribute('aria-label', 'Change weather location: ' + cityName);
     status.textContent = 'Loading weather…';
     try {
       const data = await getJson('https://api.open-meteo.com/v1/forecast?' + query);
@@ -264,7 +264,7 @@
         option.type = 'button';
         option.textContent = [...new Set([city.name, city.admin1, city.country].filter(Boolean))].join(', ');
         option.addEventListener('click', () => {
-          locationChoice = { latitude: city.latitude, longitude: city.longitude, name: option.textContent };
+          locationChoice = { latitude: city.latitude, longitude: city.longitude, name: city.name };
           try { localStorage.setItem(storageKey, JSON.stringify(locationChoice)); } catch {}
           if (params.has('lat') || params.has('lon')) {
             params.set('lat', city.latitude);
