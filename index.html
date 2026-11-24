@@ -152,7 +152,11 @@
     dateLabel.dateTime = new Intl.DateTimeFormat('sv-SE', {
       timeZone: timezone, year: 'numeric', month: '2-digit', day: '2-digit',
     }).format(today);
-    let phase = 'dusk';
+    const hour = today.getHours();
+    let phase = 'night';
+    if (hour >= 5 && hour < 8) phase = 'dawn';
+    if (hour >= 8 && hour < 17) phase = 'day';
+    if (hour >= 17 && hour < 20) phase = 'dusk';
     let cloudCover = 0;
     sunriseLabel.textContent = '—';
     sunsetLabel.textContent = '—';
