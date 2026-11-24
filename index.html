@@ -5,7 +5,7 @@
 <title>Daily Writing Mood Lamp</title>
 <style>
   * { box-sizing: border-box; }
-  body { margin: 0; background: transparent; font: 13px system-ui, sans-serif; color: #fff8f1; }
+  body { margin: 0; background: transparent; font: 13px ui-monospace, "SFMono-Regular", Consolas, monospace; color: #fff8f1; }
   .lamp {
     position: relative; isolation: isolate; overflow: hidden;
     width: min(100vw, 100dvh); aspect-ratio: 1; margin-inline: auto;
@@ -62,6 +62,11 @@
   .solar { display: grid; gap: 2px; }
   .solar:last-child { text-align: right; }
   .solar small { font-size: .82em; }
+  .date {
+    position: absolute; top: 10px; left: 12px; right: 72px;
+    font-size: clamp(9px, 4vmin, 12px); text-wrap: balance;
+    text-shadow: 0 1px 5px #332337; pointer-events: none;
+  }
   .settings {
     position: absolute; top: 7px; right: 7px; border: 0; border-radius: 8px;
     background: rgb(33 17 38 / 48%); padding: 5px 8px;
@@ -79,6 +84,7 @@
 </style>
 <main class="lamp">
   <button class="surface" type="button" aria-label="Pause color motion" aria-pressed="false"></button>
+  <time class="date" id="date"></time>
   <div class="edge">
     <span class="solar"><small>Sunrise</small><span id="sunrise">—</span></span>
     <span class="solar"><small>Sunset</small><span id="sunset">—</span></span>
@@ -105,6 +111,7 @@
   const results = document.querySelector('.results');
   const sunriseLabel = document.querySelector('#sunrise');
   const sunsetLabel = document.querySelector('#sunset');
+  const dateLabel = document.querySelector('#date');
   const storageKey = 'daily-writing-mood-lamp-city';
   const palettes = {
     dawn: ['#694668', '#75558c', '#db7d8e', '#f5aa82', '#ffe0b7'],
@@ -131,6 +138,14 @@
   }
 
   function render() {
+    const timezone = forecast?.timezone;
+    const today = new Date();
+    dateLabel.textContent = new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone, weekday: 'long', month: 'long', day: 'numeric',
+    }).format(today).replace(',', '');
+    dateLabel.dateTime = new Intl.DateTimeFormat('sv-SE', {
+      timeZone: timezone, year: 'numeric', month: '2-digit', day: '2-digit',
+    }).format(today);
     let phase = 'dusk';
     let cloudCover = 0;
     sunriseLabel.textContent = '—';
@@ -140,8 +155,8 @@
       const dateFormatter = new Intl.DateTimeFormat('en-CA', {
         timeZone: forecast.timezone, year: 'numeric', month: '2-digit', day: '2-digit',
       });
-      const today = dateFormatter.format(Date.now());
-      const index = forecast.daily.time.findIndex(day => dateFormatter.format(day * 1000) === today);
+      const localDay = dateFormatter.format(today);
+      const index = forecast.daily.time.findIndex(day => dateFormatter.format(day * 1000) === localDay);
       const sunrise = forecast.daily.sunrise[index];
       const sunset = forecast.daily.sunset[index];
       const clock = new Intl.DateTimeFormat(undefined, {
@@ -242,6 +257,7 @@
     }
   });
 
+  render();
   loadWeather();
   setInterval(render, 60000);
   setInterval(loadWeather, 30 * 60000);
