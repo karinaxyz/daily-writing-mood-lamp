@@ -9,14 +9,15 @@
   .lamp {
     position: relative; isolation: isolate; overflow: hidden;
     width: min(100vw, 100dvh); aspect-ratio: 1; margin-inline: auto;
-    background: #d7b4f4;
-    --base: #d7b4f4; --plum: #c5aaf6; --rose: #ff9fd4;
-    --amber: #ffc3e6; --light: #fff0f8; --haze: 0;
+    background: #8d9dc6;
+    --base: #8d9dc6; --plum: #b1a0c7; --rose: #ec9d94;
+    --amber: #f48f57; --light: #ffd6a0; --haze: 0;
   }
   button { font: inherit; color: inherit; cursor: pointer; }
   .surface {
     position: absolute; inset: 0; width: 100%; border: 0; overflow: hidden;
-    background: var(--base); transition: background 5s; padding: 0;
+    background: linear-gradient(174deg, var(--base), var(--plum) 34%, var(--rose) 68%, var(--amber));
+    padding: 0;
   }
   .surface::before, .surface::after {
     content: ""; position: absolute; inset: -37%; pointer-events: none;
@@ -24,10 +25,10 @@
   }
   .surface::before {
     background:
-      radial-gradient(ellipse 29% 22% at 57% 59%, var(--light), transparent 95%),
-      radial-gradient(ellipse 41% 24% at 51% 57%, var(--amber), transparent 92%),
-      radial-gradient(ellipse 34% 38% at 51% 52%, var(--rose), transparent 93%),
-      radial-gradient(ellipse 42% 35% at 36% 32%, var(--plum), transparent 95%);
+      radial-gradient(ellipse 29% 12% at 57% 66%, var(--light), transparent 95%),
+      radial-gradient(ellipse 42% 18% at 51% 67%, var(--amber), transparent 92%),
+      radial-gradient(ellipse 38% 23% at 51% 59%, var(--rose), transparent 93%),
+      radial-gradient(ellipse 42% 25% at 36% 29%, var(--base), transparent 95%);
     animation: drift 32s ease-in-out infinite alternate;
     opacity: calc(1 - var(--haze) * .24);
   }
@@ -50,13 +51,14 @@
   }
   @media (prefers-reduced-motion: reduce) {
     .surface::before, .surface::after { animation: none; }
-    .surface { transition: none; }
+    .surface::before, .surface::after { transition: none; }
   }
   .surface:focus-visible { outline: 2px solid white; outline-offset: -4px; }
   .edge, .date, .settings {
     font-size: clamp(8px, 3.5vmin, 10px);
     letter-spacing: .08em;
     text-transform: uppercase;
+    text-shadow: 0 1px 2px #463343, 0 0 5px #463343;
   }
   .edge {
     position: absolute; inset: auto 0 0; display: flex; justify-content: space-between;
@@ -64,18 +66,16 @@
     font-variant-numeric: tabular-nums;
   }
   .solar { display: grid; gap: 2px; }
-  .solar, .date, .settings {
-    background: rgb(65 40 90 / 63%); border-radius: 5px; padding: 4px 6px;
-  }
   .solar:last-child { text-align: right; }
   .solar small { font-size: inherit; }
   .date {
-    position: absolute; top: 7px; left: 7px; max-width: calc(100% - 79px);
+    position: absolute; top: 11px; left: 12px; max-width: calc(100% - 84px);
     text-wrap: balance;
-    text-shadow: 0 1px 5px #332337; pointer-events: none;
+    pointer-events: none;
   }
   .settings {
     position: absolute; top: 7px; right: 7px; border: 0;
+    background: transparent; padding: 4px 5px;
   }
   .panel {
     position: absolute; inset: 38px 8px 42px; overflow: auto; padding: 10px;
@@ -120,10 +120,10 @@
   const dateLabel = document.querySelector('#date');
   const storageKey = 'daily-writing-mood-lamp-city';
   const palettes = {
-    dawn: ['#e4c2ef', '#d3bcf9', '#ffadd0', '#ffd3de', '#fff0e9'],
-    day: ['#ebd5fa', '#d9c9ff', '#ffb6e3', '#ffd5ee', '#fff5fa'],
-    dusk: ['#d7b4f4', '#c5aaf6', '#ff9fd4', '#ffc3e6', '#fff0f8'],
-    night: ['#bca8ed', '#ad9ae6', '#e8b4f3', '#e1c2fa', '#f5e4ff'],
+    dawn: ['#96bbda', '#b5c9dc', '#f4b8aa', '#f5a674', '#ffe5b7'],
+    day: ['#8fb9dd', '#b4cde1', '#f4c9b0', '#f5b17d', '#ffedc9'],
+    dusk: ['#8d9dc6', '#b1a0c7', '#ec9d94', '#f48f57', '#ffd6a0'],
+    night: ['#7c96bb', '#a49fbc', '#d89d9c', '#e3a07e', '#f7caa5'],
   };
   const colorProperties = ['--base', '--plum', '--rose', '--amber', '--light'];
   let locationChoice;
