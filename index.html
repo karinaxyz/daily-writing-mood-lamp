@@ -9,9 +9,9 @@
   .lamp {
     position: relative; isolation: isolate; overflow: hidden;
     width: min(100vw, 100dvh); aspect-ratio: 1; margin-inline: auto;
-    background: #392448;
-    --base: #6c345b; --plum: #592d72; --rose: #df676f;
-    --amber: #ffae70; --light: #ffd2aa; --haze: 0;
+    background: #d7b4f4;
+    --base: #d7b4f4; --plum: #c5aaf6; --rose: #ff9fd4;
+    --amber: #ffc3e6; --light: #fff0f8; --haze: 0;
   }
   button { font: inherit; color: inherit; cursor: pointer; }
   .surface {
@@ -61,20 +61,21 @@
   .edge {
     position: absolute; inset: auto 0 0; display: flex; justify-content: space-between;
     padding: 16px 12px 10px; pointer-events: none;
-    background: linear-gradient(transparent, rgb(33 17 38 / 48%));
     font-variant-numeric: tabular-nums;
   }
   .solar { display: grid; gap: 2px; }
+  .solar, .date, .settings {
+    background: rgb(65 40 90 / 63%); border-radius: 5px; padding: 4px 6px;
+  }
   .solar:last-child { text-align: right; }
   .solar small { font-size: inherit; }
   .date {
-    position: absolute; top: 10px; left: 12px; right: 72px;
+    position: absolute; top: 7px; left: 7px; max-width: calc(100% - 79px);
     text-wrap: balance;
     text-shadow: 0 1px 5px #332337; pointer-events: none;
   }
   .settings {
-    position: absolute; top: 7px; right: 7px; border: 0; border-radius: 8px;
-    background: rgb(33 17 38 / 48%); padding: 5px 8px;
+    position: absolute; top: 7px; right: 7px; border: 0;
   }
   .panel {
     position: absolute; inset: 38px 8px 42px; overflow: auto; padding: 10px;
@@ -119,10 +120,10 @@
   const dateLabel = document.querySelector('#date');
   const storageKey = 'daily-writing-mood-lamp-city';
   const palettes = {
-    dawn: ['#694668', '#75558c', '#db7d8e', '#f5aa82', '#ffe0b7'],
-    day: ['#845269', '#93648e', '#ed8891', '#ffc48e', '#ffe2ae'],
-    dusk: ['#6c345b', '#592d72', '#df676f', '#ffae70', '#ffd2aa'],
-    night: ['#231b3c', '#3e2c64', '#9e557b', '#ca756a', '#f2aa87'],
+    dawn: ['#e4c2ef', '#d3bcf9', '#ffadd0', '#ffd3de', '#fff0e9'],
+    day: ['#ebd5fa', '#d9c9ff', '#ffb6e3', '#ffd5ee', '#fff5fa'],
+    dusk: ['#d7b4f4', '#c5aaf6', '#ff9fd4', '#ffc3e6', '#fff0f8'],
+    night: ['#bca8ed', '#ad9ae6', '#e8b4f3', '#e1c2fa', '#f5e4ff'],
   };
   const colorProperties = ['--base', '--plum', '--rose', '--amber', '--light'];
   let locationChoice;
