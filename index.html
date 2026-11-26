@@ -108,6 +108,8 @@
     border-radius: 10px; background: #332337;
   }
   .panel input { width: 100%; margin: 5px 0; padding: 5px; font: inherit; }
+  .clock-setting { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin-bottom: 10px; }
+  .clock-setting select { font: inherit; max-width: 100%; }
   .panel button { background: transparent; border: 1px solid #a983aa; border-radius: 5px; padding: 4px 6px; }
   .results { display: grid; gap: 4px; margin-top: 6px; }
   .results button { text-align: left; }
@@ -125,6 +127,13 @@
     <span class="solar"><small>Sunset</small><span id="sunset">—</span></span>
   </div>
   <section class="panel" id="location-panel" hidden>
+    <div class="clock-setting">
+      <label for="clock-format">Time format</label>
+      <select id="clock-format">
+        <option value="12">12-hour (AM/PM)</option>
+        <option value="24">24-hour</option>
+      </select>
+    </div>
     <form>
       <label for="city">Weather location</label>
       <input id="city" type="search" placeholder="Search city" minlength="2" required>
@@ -141,12 +150,14 @@
   const settings = document.querySelector('.settings');
   const panel = document.querySelector('.panel');
   const cityInput = document.querySelector('#city');
+  const clockFormat = document.querySelector('#clock-format');
   const status = document.querySelector('.status');
   const results = document.querySelector('.results');
   const sunriseLabel = document.querySelector('#sunrise');
   const sunsetLabel = document.querySelector('#sunset');
   const dateLabel = document.querySelector('#date');
   const storageKey = 'daily-writing-mood-lamp-city';
+  const clockStorageKey = 'daily-writing-mood-lamp-clock-format';
   const palettes = {
     dawn: ['#638fbc', '#8d91ba', '#dc8b86', '#e28c57', '#f6bc84'],
     day: ['#729bc4', '#9c9fc8', '#e89a8c', '#ed9b64', '#fac691'],
@@ -160,6 +171,9 @@
   let citySearch = 0;
 
   try { locationChoice = JSON.parse(localStorage.getItem(storageKey)); } catch {}
+  try {
+    if (localStorage.getItem(clockStorageKey) === '24') clockFormat.value = '24';
+  } catch {}
 
   const params = new URLSearchParams(window.location.search);
   if (params.has('lat') && params.has('lon')) {
@@ -222,6 +236,7 @@
       const sunset = forecast?.daily.sunset[index] ?? estimatedSet;
       const clock = new Intl.DateTimeFormat(undefined, {
         timeZone: timezone, hour: 'numeric', minute: '2-digit',
+        hourCycle: clockFormat.value === '24' ? 'h23' : 'h12',
       });
       sunriseLabel.textContent = Number.isFinite(sunrise) ? clock.format(sunrise * 1000) : '—';
       sunsetLabel.textContent = Number.isFinite(sunset) ? clock.format(sunset * 1000) : '—';
@@ -284,6 +299,10 @@
   }
 
   settings.addEventListener('click', () => toggleSettings(panel.hidden));
+  clockFormat.addEventListener('change', () => {
+    try { localStorage.setItem(clockStorageKey, clockFormat.value); } catch {}
+    render();
+  });
   panel.addEventListener('keydown', event => {
     if (event.key === 'Escape') toggleSettings(false);
   });
